@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <style>
+    body { background:#f4f6f9; overflow:hidden; }
+
+    .topbar {
+      height:56px;
+      background:#031d42;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 20px;
+      font-weight:bold;
+    }
+
+    .sidebar {
+      width:220px;
+      background:#212529;
+      height:calc(100vh - 56px);
+      position:fixed;
+      top:56px;
+      left:0;
+      padding-top:15px;
+    }
+
+    .sidebar a {
+      color:#adb5bd;
+      padding:12px 20px;
+      display:block;
+      text-decoration:none;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background:#343a40;
+      color:#fff;
+    }
+
+    .content {
+      margin-left:220px;
+      margin-top:56px;
+      padding:20px;
+      height:calc(100vh - 56px);
+      overflow-y:auto;
+    }
+
+    .card-kpi {
+      border-left:5px solid #0d6efd;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card-kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    }
+
+    .card-kpi h3 {
+      margin:0;
+      font-weight:bold;
+    }
+
+    .card-kpi span {
+      font-size:14px;
+      color:#6c757d;
+    }
+
+    .scroll-area {
+      max-height:40vh;
+      overflow-y:auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPO -->
+<div class="topbar">
+  <span>Sistema de Registro de Encomendas</span>
+  <div class="d-flex gap-3 align-items-center">
+    <span id="usuarioLogado"></span>
+    <button class="btn btn-sm btn-light" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="sidebar">
+  <a href="dashboard.html" class="active">📊 Dashboard</a>
+  <a href="index.html">📦 Registro e Retirada</a>
+  <a href="armazenadas.html">🏷️ Encomendas Armazenadas</a>
+  <a href="retiradas.html">✅ Encomendas Retiradas</a>
+  <a href="moradores.html" data-perfil="admin">👥 Moradores</a>
+  <a href="funcionarios.html" data-perfil="admin">🧑‍💼 Funcionários</a>
+  <a href="relatorios.html" data-perfil="admin">📈 Relatórios</a>
+  <a href="auditoria.html" data-perfil="admin">🕵️ Auditoria</a>
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content">
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+        <div class="card card-kpi p-3"
+          onclick="window.location.href='armazenadas.html'">
+        <span>Encomendas Armazenadas</span>
+        <h3 id="kpiArmazenadas">0</h3>
+
+        <!-- 🔔 BADGE -->
+    <span id="badgeAlerta"
+          class="badge bg-danger position-absolute top-0 end-0 m-2 d-none">
+      0
+    </span>
+
+     </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card card-kpi p-3 border-success">
+        <span>Retiradas Hoje</span>
+        <h3 id="kpiRetiradasHoje">0</h3>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-kpi p-3 border-warning"
+          onclick="window.location.href='moradores.html'">
+       <span>Moradores Cadastrados</span>
+       <h3 id="kpiMoradores">0</h3>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card card-kpi p-3 border-dark"
+          onclick="window.location.href='funcionarios.html'">        
+        <span>Funcionários Ativos</span>
+        <h3 id="kpiFuncionarios">0</h3>
+      </div>
+    </div>
+
+  </div>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissoes.js"></script>
+
+<script>
+const LIMITE_ALERTA_HORAS = 48;
+
+/* ================= DASHBOARD ================= */
+
+async function carregarKPIs() {
+  const [{ count: arm }, { count: mor }, { count: func }] = await Promise.all([
+    supabaseClient.from('encomendas').select('*', { count:'exact', head:true }).eq('status','ARMAZENADA'),
+    supabaseClient.from('moradores').select('*', { count:'exact', head:true }).eq('ativo',true),
+    supabaseClient.from('funcionarios').select('*', { count:'exact', head:true }).eq('ativo',true)
+  ]);
+
+  document.getElementById('kpiArmazenadas').innerText = arm || 0;
+  document.getElementById('kpiMoradores').innerText   = mor || 0;
+  document.getElementById('kpiFuncionarios').innerText = func || 0;
+
+  // Retiradas hoje
+  const hoje = new Date().toISOString().split('T')[0];
+
+  const { count } = await supabaseClient
+    .from('retiradas')
+    .select('*', { count:'exact', head:true })
+    .gte('data_retirada', hoje);
+
+  document.getElementById('kpiRetiradasHoje').innerText = count || 0;
+}
+
+/* ================= INIT ================= */
+(async () => {
+  const usuario = await protegerPagina();
+  aplicarPermissoes(usuario.perfil);
+  document.getElementById('usuarioLogado').innerText =
+    `${usuario.nome} (${usuario.perfil})`;
+
+  carregarKPIs();
+  carregarAlertas();
+})();
+
+/*========= alertas ======= */
+async function carregarAlertas() {
+  const agora = new Date();
+
+  const { data, error } = await supabaseClient
+    .from('encomendas')
+    .select('data_recebimento')
+    .eq('status', 'ARMAZENADA');
+
+  if (error) {
+    console.error('Erro ao buscar alertas:', error);
+    return;
+  }
+
+  let alertas = 0;
+
+  data.forEach(e => {
+    const recebimento = new Date(e.data_recebimento);
+    const horas = (agora - recebimento) / (1000 * 60 * 60);
+
+    if (horas >= LIMITE_ALERTA_HORAS) {
+      alertas++;
+    }
+  });
+
+  const badge = document.getElementById('badgeAlerta');
+
+  if (alertas > 0) {
+    badge.innerText = alertas;
+    badge.classList.remove('d-none');
+  } else {
+    badge.classList.add('d-none');
+  }
+
+  if (horas >= 72) {
+  badge.className = 'badge bg-danger';
+} else if (horas >= 48) {
+  badge.className = 'badge bg-warning text-dark';
+}
+
+}
+
+</script>
+
+</body>
+</html>

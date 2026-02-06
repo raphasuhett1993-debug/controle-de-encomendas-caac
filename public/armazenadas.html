@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Encomendas Armazenadas</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    body { background-color: #f4f6f9; overflow: hidden; }
+
+    .topbar {
+      height: 56px;
+      background-color: #031d42;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-weight: bold;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #212529;
+      height: calc(100vh - 56px);
+      position: fixed;
+      top: 56px;
+      left: 0;
+      padding-top: 15px;
+    }
+
+    .sidebar a {
+      color: #adb5bd;
+      padding: 12px 20px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #343a40;
+      color: #fff;
+    }
+
+    .content {
+      margin-left: 220px;
+      margin-top: 56px;
+      padding: 20px;
+      height: calc(100vh - 56px);
+    }
+
+    .scroll-area {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .card { box-shadow:0 4px 10px rgba(0,0,0,0.05); }
+
+    /* Estilo da Tabela */
+.table thead th {
+    background-color: #f8f9fa; /* Cor cinza clara profissional */
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+    /* Cores dos Tiques do WhatsApp */
+    .zap-sent { color: #adb5bd; }       /* Cinza (Enviado) */
+    .zap-delivered { color: #adb5bd; }  /* Cinza Duplo (Entregue) */
+    .zap-read { color: #34b7f1; }       /* Azul (Lido) */
+
+    .status-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 100px;
+    }
+
+.signature-pad {
+  border:2px dashed #ccc;
+  border-radius:4px;
+  background:#fff;
+  width:100%;
+  height:220px;
+  cursor:crosshair;
+  touch-action:none;
+}
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span>Sistema de Registro e Retirada de Encomendas</span>
+  <div class="d-flex gap-3 align-items-center">
+    <span id="usuarioLogado" class="fw-normal">...</span>
+    <button class="btn btn-sm btn-light" id="btnLogout">Sair</button>
+  </div>
+</div>
+
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a href="dashboard.html">📊 Dashboard</a>
+  <a href="index.html">📦 Registro e Retirada</a>
+  <a href="armazenadas.html" class="active">🏷️ Encomendas Armazenadas</a>
+  <a href="retiradas.html">✅ Encomendas Retiradas</a>
+  <a href="moradores.html" data-perfil="admin">👥 Cadastro de Moradores</a>
+  <a href="relatorios.html" data-perfil="admin,supervisor">📈 Relatórios</a>
+  <a href="funcionarios.html" data-perfil="admin">🧑‍💼 Funcionários</a>
+  <a href="auditoria.html" data-perfil="admin">🕵️ Auditoria</a>
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content">
+
+  <div class="card">
+    <div class="card-header fw-bold">
+      Encomendas Atualmente Armazenadas
+    </div>
+
+    <div class="p-3 border-bottom">
+      <input id="filtroBusca" class="form-control"
+        placeholder="Buscar por código, bloco, apartamento ou morador...">
+    </div>
+
+    <div class="scroll-area">
+      <table class="table table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código</th>
+            <th>Tipo</th>
+            <th>Bloco / Apto</th>
+            <th>Morador</th>
+            <th>NR</th>
+            <th>Recebimento</th>
+            <th style="width:110px">Ação</th>
+            <th>Mensagem</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaArmazenadas"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL RETIRADA -->
+<div class="modal fade" id="modalRetirada" data-bs-backdrop="static">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Registrar Retirada</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="retiradaId">
+
+        <div class="mb-2">
+          <label>Nome de quem retirou</label>
+          <input id="nomeRetirante" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>Documento</label>
+          <input id="documentoRetirante" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label class="fw-bold">Assinatura Digital</label>
+          <div class="position-relative">
+            <canvas id="canvasAssinatura" class="signature-pad" width="450" height="200"></canvas>
+            <button type="button"
+              class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2"
+              onclick="limparAssinatura()">
+              <i class="fas fa-trash"></i> Limpar
+            </button>
+          </div>
+          <small class="text-muted">Assine dentro do quadro acima.</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger" id="btnConfirmarRetirada">
+          Confirmar Retirada
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!--Modal WhatsApp-->
+
+<div class="modal fade" id="modalStatusWhatsapp" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+     <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="fab fa-whatsapp"></i> Rastreio da Mensagem</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+          <div class="modal-body">
+           <div class="d-flex flex-column gap-3">
+           <div class="d-flex justify-content-between border-bottom pb-2">
+                <span class="fw-bold text-secondary">ENVIADA:</span>
+                <span id="st-enviada">...</span>
+            </div>
+                <div class="d-flex justify-content-between border-bottom pb-2">
+                    <span class="fw-bold text-secondary">RECEBIDA:</span>
+                    <span id="st-recebida">...</span>
+                 </div>
+                   <div class="d-flex justify-content-between">
+                   <span class="fw-bold text-secondary">LIDA:</span>
+                   <span id="st-lida">...</span>
+              </div>
+          </div>
+      </div>
+    </div>
+   </div>
+</div>
+
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissoes.js"></script>
+
+<script>
+let modalRetirada;
+let encomendaSelecionada = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const funcionario = await protegerPagina(['admin', 'portaria', 'supervisor']);
+  if (!funcionario) return;
+
+  aplicarPermissoes(funcionario.perfil);
+
+  modalRetirada = new bootstrap.Modal(
+    document.getElementById('modalRetirada')
+  );
+
+  document.getElementById('btnLogout')
+    .addEventListener('click', logout);
+
+  document.getElementById('filtroBusca')
+    .addEventListener('input', carregarArmazenadas);
+
+  document.getElementById('btnConfirmarRetirada')
+    .addEventListener('click', confirmarRetirada);
+
+  carregarArmazenadas();
+});
+
+// ===== canvas =====
+const canvas = document.getElementById('canvasAssinatura');
+const ctx = canvas.getContext('2d');
+
+let isDrawing = false;
+let points = [];
+let lastX = null;
+let lastY = null;
+
+// Detecta mobile (dedo)
+const isMobile = window.matchMedia('(pointer: coarse)').matches;
+
+/* ===============================
+   AJUSTE RESPONSIVO DO CANVAS
+================================ */
+function ajustarCanvas() {
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.parentElement.offsetWidth;
+  const height = 220;
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = isMobile ? 3.5 : 2;
+}
+
+// Chame sempre que abrir o modal
+// setTimeout(ajustarCanvas, 300);
+
+/* ===============================
+   EVENTOS DE DESENHO
+================================ */
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  isDrawing = true;
+  points = [];
+  lastX = null;
+  lastY = null;
+
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+
+  points.push(`M ${x.toFixed(1)} ${y.toFixed(1)}`);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing) return;
+
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+
+  if (lastX !== null && lastY !== null) {
+    const midX = (lastX + x) / 2;
+    const midY = (lastY + y) / 2;
+
+    ctx.quadraticCurveTo(lastX, lastY, midX, midY);
+    ctx.stroke();
+
+    points.push(`Q ${lastX.toFixed(1)} ${lastY.toFixed(1)} ${midX.toFixed(1)} ${midY.toFixed(1)}`);
+  }
+
+  lastX = x;
+  lastY = y;
+});
+
+canvas.addEventListener('pointerup', () => {
+  isDrawing = false;
+  lastX = null;
+  lastY = null;
+});
+
+canvas.addEventListener('pointerout', () => {
+  isDrawing = false;
+  lastX = null;
+  lastY = null;
+});
+
+/* ===============================
+   LIMPAR ASSINATURA
+================================ */
+function limparAssinatura() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  points = [];
+}
+
+
+/* ===============================
+   LISTAR ARMAZENADAS
+================================ */
+async function carregarArmazenadas() {
+  const filtro = document.getElementById('filtroBusca').value.toLowerCase();
+
+  // 1. CORREÇÃO: Adicionadas as colunas do WhatsApp no Select
+  const { data, error } = await supabaseClient
+    .from('encomendas')
+    .select(`
+      id,
+      codigo_unico,
+      tipo_encomenda,
+      nr,
+      data_recebimento,
+      zaid,
+      zap_status,
+      zap_data_entrega,
+      zap_data_leitura,
+      moradores (
+        nome,
+        bloco,
+        numero_apartamento
+      )
+    `)
+    .eq('status', 'ARMAZENADA')
+    .order('data_recebimento', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const tbody = document.getElementById('tabelaArmazenadas');
+  tbody.innerHTML = '';
+
+  data
+    .filter(e =>
+      !filtro ||
+      e.codigo_unico.toLowerCase().includes(filtro) ||
+      e.moradores.nome.toLowerCase().includes(filtro) ||
+      e.moradores.bloco.toLowerCase().includes(filtro) ||
+      e.moradores.numero_apartamento.toString().includes(filtro)
+    )
+    .forEach(e => {
+      const tr = document.createElement('tr');
+
+      // 2. LÓGICA DOS TIQUES DO WHATSAPP (Corrigida)
+      let htmlStatusZap = '';
+      if (e.zap_status === 'READ') {
+          htmlStatusZap = `<span class="zap-read" title="Lida"><i class="fas fa-check-double"></i></span>`;
+      } else if (e.zap_status === 'RECEIVED' || e.zap_status === 'DELIVERED') {
+          htmlStatusZap = `<span class="zap-delivered" title="Entregue"><i class="fas fa-check-double"></i></span>`;
+      } else if (e.zap_status === 'SENT' || e.zaid) {
+          htmlStatusZap = `<span class="zap-sent" title="Enviada"><i class="fas fa-check"></i></span>`;
+      }
+
+      // 3. CORREÇÃO: Removido a <tr> interna que estava sobrando
+      tr.innerHTML = `
+        <td>${e.codigo_unico}</td>
+        <td>${e.tipo_encomenda}</td>
+        <td>${e.moradores.bloco} - ${e.moradores.numero_apartamento}</td>
+        <td>${e.moradores.nome}</td>
+        <td>${e.NR || '-'}</td>
+        <td>${new Date(e.data_recebimento).toLocaleString('pt-BR')}</td>
+        <td>
+          <button class="btn btn-sm btn-danger btn-retirar">Retirar</button>
+        </td>
+        <td>
+            <div class="status-container">
+              <button class="btn btn-sm btn-outline-light text-dark border-0 btn-zap">
+                    <i class="fab fa-whatsapp text-success"></i>
+                </button>
+                <span style="font-size: 1.1rem;">${htmlStatusZap}</span>
+                
+            </div>
+        </td>`;
+
+      // Evento do botão Retirar
+      tr.querySelector('.btn-retirar').addEventListener('click', () => {
+        encomendaSelecionada = e.id;
+        document.getElementById('retiradaId').value = e.id;
+        document.getElementById('nomeRetirante').value = '';
+        document.getElementById('documentoRetirante').value = '';
+        modalRetirada.show();
+      });
+
+      // Evento do botão WhatsApp (Abre o modal de status)
+      tr.querySelector('.btn-zap').addEventListener('click', () => {
+        abrirModalStatusZap(e);
+      });
+
+      tbody.appendChild(tr);
+    });
+}
+
+/* ===============================
+   MODAL STATUS WHATSAPP
+================================ */
+// 4. CORREÇÃO: Adicionada a função que abre o modal de status
+function abrirModalStatusZap(e) {
+    const modalStatus = new bootstrap.Modal(document.getElementById('modalStatusWhatsapp'));
+    
+    document.getElementById('st-enviada').innerHTML = e.zaid ? 
+        '<span class="text-success">✅ Enviada</span>' : 
+    '<span class="text-danger">❌ Não enviada</span>';
+    
+    document.getElementById('st-recebida').innerHTML = e.zap_data_entrega ? 
+        `<span class="text-success">✅ Recebida</span><br><small>${e.zap_data_entrega}</small>` : 
+    '<span class="text-muted">Pendente</span>';
+    
+    document.getElementById('st-lida').innerHTML = e.zap_data_leitura ? 
+         `<span class="text-success">✅ Lida</span><br><small>${e.zap_data_leitura}</small>` : 
+    '<span class="text-muted">Ainda não lida</span>';
+    
+    modalStatus.show();
+}
+
+/// ===== retirada =====
+async function confirmarRetirada() {
+  if (!encomendaSelecionada) {
+    alert('Nenhuma encomenda selecionada.');
+    return;
+  }
+
+  const nome = nomeRetirante.value.trim();
+  const doc = documentoRetirante.value.trim();
+
+  if (!nome || !doc) {
+    alert('Preencha nome e documento.');
+    return;
+  }
+
+  if (points.length < 5) {
+    alert('Assinatura obrigatória.');
+    return;
+  }
+
+  try {
+    // 1. SVG
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
+      <path d="${points.join(' ')}" fill="none" stroke="black" stroke-width="2"/>
+    </svg>`;
+
+    const fileName = `assinatura_${encomendaSelecionada}_${Date.now()}.svg`;
+
+    const { error: uploadError } =
+      await supabaseClient.storage
+        .from('assinaturas')
+        .upload(fileName, new Blob([svg], { type:'image/svg+xml' }));
+
+    if (uploadError) throw uploadError;
+
+    const { data:{ publicUrl } } =
+      supabaseClient.storage.from('assinaturas').getPublicUrl(fileName);
+
+    // 2. HASH
+    const hashBuffer = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(`ID:${encomendaSelecionada}|NOME:${nome}|DOC:${doc}`)
+    );
+
+    const hash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2,'0'))
+      .join('');
+
+    // 3. Usuário
+    const { data:{ session } } = await supabaseClient.auth.getSession();
+
+    // 4. INSERT RETIRADA
+    const { error: insertError } =
+      await supabaseClient.from('retiradas').insert({
+        encomenda_id: encomendaSelecionada,
+        nome_retirante: nome,
+        documento_retirante: doc,
+        assinatura_url: publicUrl,
+        assinatura_hash: hash,
+        funcionario_liberou: document.getElementById('usuarioLogado').innerText,
+        data_retirada: new Date().toISOString()
+      });
+
+    if (insertError) throw insertError;
+
+    // 5. UPDATE ENCOMENDA
+    const { error: updateError } =
+      await supabaseClient
+        .from('encomendas')
+        .update({ status: 'RETIRADA' })
+        .eq('id', encomendaSelecionada);
+
+    if (updateError) throw updateError;
+
+    modalRetirada.hide();
+    limparAssinatura();
+    encomendaSelecionada = null;
+    carregarArmazenadas();
+    alert('Retirada registrada com sucesso!');
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao registrar retirada: ' + err.message);
+  }
+
+  await fetch("/api/retirada", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ retiradaId: id })
+});
+
+}
+</script>
+
+</body>
+</html>

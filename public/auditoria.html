@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Auditoria do Sistema</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body { background-color: #f4f6f9; overflow: hidden; }
+
+    .topbar {
+      height: 56px;
+      background-color: #031d42;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-weight: bold;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #212529;
+      height: calc(100vh - 56px);
+      position: fixed;
+      top: 56px;
+      left: 0;
+      padding-top: 15px;
+    }
+
+    .sidebar a {
+      color: #adb5bd;
+      padding: 12px 20px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #343a40;
+      color: #fff;
+    }
+
+    .content {
+      margin-left: 220px;
+      margin-top: 56px;
+      padding: 20px;
+      height: calc(100vh - 56px);
+    }
+
+    .scroll-area {
+      max-height: 65vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span>Sistema de Registro e Retirada de Encomendas</span>
+  <button class="btn btn-sm btn-light" id="btnLogout">Sair</button>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a href="dashboard.html">📊 Dashboard</a>
+  <a href="index.html">📦 Registro e Retirada</a>
+  <a href="armazenadas.html">🏷️ Encomendas Armazenadas</a>
+  <a href="retiradas.html">✅ Encomendas Retiradas</a>
+  <a href="moradores.html" data-perfil="admin">👥 Cadastro de Moradores</a>
+  <a href="relatorios.html" data-perfil="admin,supervisor">📈 Relatórios</a>
+  <a href="funcionarios.html" data-perfil="admin">🧑‍💼 Funcionários</a>
+  <a href="auditoria.html" class="active" data-perfil="admin">🕵️ Auditoria</a>
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content">
+
+  <!-- FILTROS -->
+  <div class="card mb-3">
+    <div class="card-body row g-3">
+
+      <div class="col-md-3">
+        <label>Tabela</label>
+        <select id="filtroTabela" class="form-select">
+          <option value="">Todas</option>
+          <option value="moradores">Moradores</option>
+          <option value="funcionarios">Funcionários</option>
+          <option value="encomendas">Encomendas</option>
+          <option value="retiradas">Retiradas</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label>Ação</label>
+        <select id="filtroAcao" class="form-select">
+          <option value="">Todas</option>
+          <option value="INSERT">Inserção</option>
+          <option value="UPDATE">Atualização</option>
+          <option value="DELETE">Exclusão</option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label>Usuário</label>
+        <input id="filtroUsuario" class="form-control" placeholder="Nome do funcionário">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="card">
+    <div class="card-header fw-bold">
+      Histórico de Ações
+    </div>
+
+    <div class="scroll-area">
+      <table class="table table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Data</th>
+            <th>Tabela</th>
+            <th>Ação</th>
+            <th>Usuário</th>
+            <th style="width:90px">Detalhes</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaAuditoria"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalAuditoria" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Detalhes da Auditoria</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body row g-3">
+        <div class="col-md-6"><strong>Usuário:</strong><div id="audUsuario"></div></div>
+        <div class="col-md-6"><strong>Ação:</strong><div id="audAcao"></div></div>
+        <div class="col-md-6"><strong>Tabela:</strong><div id="audTabela"></div></div>
+        <div class="col-md-6"><strong>Registro:</strong><div id="audRegistro"></div></div>
+        <div class="col-md-12"><strong>Data:</strong><div id="audData"></div></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissoes.js"></script>
+
+<script>
+let modalAuditoria;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const funcionario = await protegerPagina(['admin']);
+  if (!funcionario) return;
+
+  aplicarPermissoes(funcionario.perfil);
+
+  modalAuditoria = new bootstrap.Modal(
+    document.getElementById('modalAuditoria')
+  );
+
+  document.getElementById('btnLogout').addEventListener('click', logout);
+  document.getElementById('filtroTabela').addEventListener('change', carregarAuditoria);
+  document.getElementById('filtroAcao').addEventListener('change', carregarAuditoria);
+  document.getElementById('filtroUsuario').addEventListener('input', carregarAuditoria);
+
+  carregarAuditoria();
+});
+
+async function carregarAuditoria() {
+  const tabela = document.getElementById('filtroTabela').value;
+  const acao = document.getElementById('filtroAcao').value;
+  const usuario = document.getElementById('filtroUsuario').value.toLowerCase();
+
+  let query = supabaseClient
+    .from('auditoria')
+    .select('*')
+    .order('criado_em', { ascending: false })
+    .limit(200);
+
+  if (tabela) query = query.eq('tabela', tabela);
+  if (acao) query = query.eq('acao', acao);
+
+  const { data } = await query;
+  const tbody = document.getElementById('tabelaAuditoria');
+  tbody.innerHTML = '';
+
+  data
+    .filter(a => !usuario || (a.usuario_nome || '').toLowerCase().includes(usuario))
+    .forEach(a => {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>${new Date(a.criado_em).toLocaleString('pt-BR')}</td>
+        <td>${a.tabela}</td>
+        <td>${a.acao}</td>
+        <td>${a.usuario_nome || '-'}</td>
+        <td><button class="btn btn-sm btn-outline-primary">Ver</button></td>
+      `;
+
+      tr.querySelector('button').addEventListener('click', () => {
+        document.getElementById('audUsuario').innerText = a.usuario_nome || '-';
+        document.getElementById('audAcao').innerText = a.acao;
+        document.getElementById('audTabela').innerText = a.tabela;
+        document.getElementById('audRegistro').innerText = a.registro_id;
+        document.getElementById('audData').innerText =
+          new Date(a.criado_em).toLocaleString('pt-BR');
+
+        modalAuditoria.show();
+      });
+
+      tbody.appendChild(tr);
+    });
+}
+</script>
+
+</body>
+</html>

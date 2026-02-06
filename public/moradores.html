@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Moradores</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      overflow: hidden;
+      background-color: #f4f6f9;
+    }
+
+    .topbar {
+      height: 56px;
+      background-color: #031d42;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-weight: bold;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #212529;
+      color: #fff;
+      height: calc(100vh - 56px);
+      position: fixed;
+      top: 56px;
+      left: 0;
+      padding-top: 15px;
+    }
+
+    .sidebar a {
+      color: #adb5bd;
+      padding: 12px 20px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #343a40;
+      color: #fff;
+    }
+
+    .content {
+      margin-left: 220px;
+      margin-top: 56px;
+      height: calc(100vh - 56px);
+      padding: 20px;
+    }
+
+    .scroll-area {
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+
+    .card {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span>Sistema de Registro e Retirada de Encomendas</span>
+
+  <div class="d-flex align-items-center gap-3">
+    <span id="usuarioLogado" class="fw-normal"></span>
+
+    <button type="button" class="btn btn-sm btn-light" onclick="logout()">
+      Sair
+    </button>
+  </div>
+</div>
+
+<!-- MENU LATERAL -->
+<div class="sidebar">
+  <a href="dashboard.html">📊 Dashboard</a>
+  <a href="index.html">📦 Registro e Retirada</a>
+  <a href="armazenadas.html">🏷️ Encomendas Armazenadas</a>
+  <a href="retiradas.html">✅ Encomendas Retiradas</a>
+  <a href="moradores.html" data-perfil="admin"class="active">👥 Cadastro de Moradores</a>
+  <a href="relatorios.html" data-perfil="admin">📈 Relatórios</a>
+  <a href="funcionarios.html" data-perfil="admin">🧑‍💼 Funcionários</a>
+  <a href="auditoria.html" data-perfil="admin">🕵️ Auditoria</a>
+
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content">
+
+  <!-- CADASTRO (TOPO – 100%) -->
+<div class="card mb-4">
+  <div class="card-header fw-bold">Cadastrar Morador</div>
+  <div class="card-body">
+
+    <form id="form-morador">
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label>Nome do Morador</label>
+          <input id="nome" class="form-control" required>
+        </div>
+
+        <div class="col-md-2">
+          <label>Bloco</label>
+          <input id="bloco" class="form-control" required>
+        </div>
+
+        <div class="col-md-2">
+          <label>Apartamento</label>
+          <input id="numeroApartamento" class="form-control" required>
+        </div>
+
+        <div class="col-md-2">
+          <label>CPF</label>
+          <input id="cpf" class="form-control" required>
+        </div>
+
+        <div class="col-md-4">
+          <label>Telefone (WhatsApp)</label>
+          <div class="row g-2">
+            <div class="col-4">
+              <select id="ddi" class="form-select">
+                <!-- AMÉRICAS -->
+                <option value="1">🇺🇸 Estados Unidos +1</option>
+                <option value="1">🇨🇦 Canadá +1</option>
+                <option value="52">🇲🇽 México +52</option>
+                <option value="55" selected>🇧🇷 Brasil +55</option>
+                <option value="54">🇦🇷 Argentina +54</option>
+                <option value="56">🇨🇱 Chile +56</option>
+                <option value="57">🇨🇴 Colômbia +57</option>
+                <option value="58">🇻🇪 Venezuela +58</option>
+                <option value="51">🇵🇪 Peru +51</option>
+                <option value="593">🇪🇨 Equador +593</option>
+                <option value="591">🇧🇴 Bolívia +591</option>
+                <option value="595">🇵🇾 Paraguai +595</option>
+                <option value="598">🇺🇾 Uruguai +598</option>
+                <option value="592">🇬🇾 Guiana +592</option>
+                <option value="597">🇸🇷 Suriname +597</option>
+                <option value="509">🇭🇹 Haiti +509</option>
+                <option value="53">🇨🇺 Cuba +53</option>
+                <option value="506">🇨🇷 Costa Rica +506</option>
+                <option value="507">🇵🇦 Panamá +507</option>
+                <option value="503">🇸🇻 El Salvador +503</option>
+                <option value="502">🇬🇹 Guatemala +502</option>
+                <option value="504">🇭🇳 Honduras +504</option>
+                <option value="505">🇳🇮 Nicarágua +505</option>
+                <option value="501">🇧🇿 Belize +501</option>
+                <option value="1-809">🇩🇴 República Dominicana +1</option>
+                <option value="1-876">🇯🇲 Jamaica +1</option>
+                <option value="1-242">🇧🇸 Bahamas +1</option>
+                <option value="1-246">🇧🇧 Barbados +1</option>
+                <option value="1-868">🇹🇹 Trinidad e Tobago +1</option>
+                <!-- EUROPA -->
+                <option value="351">🇵🇹 Portugal +351</option>
+                <option value="34">🇪🇸 Espanha +34</option>
+                <option value="33">🇫🇷 França +33</option>
+                <option value="44">🇬🇧 Reino Unido +44</option>
+                <option value="49">🇩🇪 Alemanha +49</option>
+                <option value="39">🇮🇹 Itália +39</option>
+                <option value="41">🇨🇭 Suíça +41</option>
+                <option value="31">🇳🇱 Holanda +31</option>
+                <option value="32">🇧🇪 Bélgica +32</option>
+                <option value="43">🇦🇹 Áustria +43</option>
+                <option value="353">🇮🇪 Irlanda +353</option>
+                <option value="45">🇩🇰 Dinamarca +45</option>
+                <option value="46">🇸🇪 Suécia +46</option>
+                <option value="47">🇳🇴 Noruega +47</option>
+                <option value="358">🇫🇮 Finlândia +358</option>
+                <option value="48">🇵🇱 Polônia +48</option>
+                <option value="420">🇨🇿 República Tcheca +420</option>
+                <option value="421">🇸🇰 Eslováquia +421</option>
+                <option value="36">🇭🇺 Hungria +36</option>
+                <option value="40">🇷🇴 Romênia +40</option>
+                <option value="359">🇧🇬 Bulgária +359</option>
+                <option value="30">🇬🇷 Grécia +30</option>
+                <option value="385">🇭🇷 Croácia +385</option>
+                <option value="386">🇸🇮 Eslovênia +386</option>
+                <option value="381">🇷🇸 Sérvia +381</option>
+                <option value="382">🇲🇪 Montenegro +382</option>
+                <option value="387">🇧🇦 Bósnia e Herzegovina +387</option>
+                <option value="389">🇲🇰 Macedônia do Norte +389</option>
+                <option value="355">🇦🇱 Albânia +355</option>
+                <option value="370">🇱🇹 Lituânia +370</option>
+                <option value="371">🇱🇻 Letônia +371</option>
+                <option value="372">🇪🇪 Estônia +372</option>
+                <option value="354">🇮🇸 Islândia +354</option>
+                <option value="356">🇲🇹 Malta +356</option>
+                <option value="357">🇨🇾 Chipre +357</option>
+                <option value="380">🇺🇦 Ucrânia +380</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <select id="ddd" class="form-select">
+                <option value=""></option>
+                <!-- SUDESTE -->
+                <option value="11">SP (11)</option>
+                <option value="12">SP (12)</option>
+                <option value="13">SP (13)</option>
+                <option value="14">SP (14)</option>
+                <option value="15">SP (15)</option>
+                <option value="16">SP (16)</option>
+                <option value="17">SP (17)</option>
+                <option value="18">SP (18)</option>
+                <option value="19">SP (19)</option>
+                <option value="21" selected>RJ (21)</option>
+                <option value="22">RJ (22)</option>
+                <option value="24">RJ (24)</option>
+                <option value="27">ES (27)</option>
+                <option value="28">ES (28)</option>
+                <option value="31">MG (31)</option>
+                <option value="32">MG (32)</option>
+                <option value="33">MG (33)</option>
+                <option value="34">MG (34)</option>
+                <option value="35">MG (35)</option>
+                <option value="37">MG (37)</option>
+                <option value="38">MG (38)</option>
+                <!-- SUL -->
+                <option value="41">PR (41)</option>
+                <option value="42">PR (42)</option>
+                <option value="43">PR (43)</option>
+                <option value="44">PR (44)</option>
+                <option value="45">PR (45)</option>
+                <option value="46">PR (46)</option>
+                <option value="47">SC (47)</option>
+                <option value="48">SC (48)</option>
+                <option value="49">SC (49)</option>
+                <option value="51">RS (51)</option>
+                <option value="53">RS (53)</option>
+                <option value="54">RS (54)</option>
+                <option value="55">RS (55)</option>
+                <!-- CENTRO-OESTE -->
+                <option value="61">DF (61)</option>
+                <option value="62">GO (62)</option>
+                <option value="64">GO (64)</option>
+                <option value="65">MT (65)</option>
+                <option value="66">MT (66)</option>
+                <option value="67">MS (67)</option>
+                <!-- NORDESTE -->
+                <option value="71">BA (71)</option>
+                <option value="73">BA (73)</option>
+                <option value="74">BA (74)</option>
+                <option value="75">BA (75)</option>
+                <option value="77">BA (77)</option>
+                <option value="79">SE (79)</option>
+                <option value="81">PE (81)</option>
+                <option value="87">PE (87)</option>
+                <option value="82">AL (82)</option>
+                <option value="83">PB (83)</option>
+                <option value="84">RN (84)</option>
+                <option value="85">CE (85)</option>
+                <option value="88">CE (88)</option>
+                <option value="86">PI (86)</option>
+                <option value="89">PI (89)</option>
+                <option value="98">MA (98)</option>
+                <option value="99">MA (99)</option>
+                <!-- NORTE -->
+                <option value="91">PA (91)</option>
+                <option value="93">PA (93)</option>
+                <option value="94">PA (94)</option>
+                <option value="92">AM (92)</option>
+                <option value="97">AM (97)</option>
+                <option value="95">RR (95)</option>
+                <option value="96">AP (96)</option>
+                <option value="69">RO (69)</option>
+                <option value="68">AC (68)</option>
+                <option value="63">TO (63)</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <input id="telefoneNumero"
+                     class="form-control"
+                     placeholder="99999-9999"
+                     required>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 text-end">
+          <button class="btn btn-success px-5">
+            Cadastrar
+          </button>
+        </div>
+
+      </div>
+    </form>
+
+    <div id="mensagem" class="mt-3 fw-bold"></div>
+  </div>
+</div>
+
+<!-- LISTA (ABAIXO – 100%) -->
+<div class="card">
+  <div class="card-header fw-bold">Moradores Cadastrados</div>
+
+  <div class="p-3 border-bottom">
+    <input id="filtroBusca"
+           class="form-control"
+           placeholder="Buscar por nome, bloco ou apartamento..."
+           oninput="carregarMoradores()">
+  </div>
+
+  <div class="scroll-area">
+    <table class="table table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>Bloco</th>
+          <th>Apartamento</th>
+          <th>Telefone</th>
+          <th>CPF</th>
+          <th style="width:90px">Editar</th>
+          <th style="width:90px">Excluir</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-moradores"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalExcluir">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Confirmar Exclusão</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="textoExcluir"></p>
+        <input type="hidden" id="excluirId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger" onclick="confirmarExcluir()">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEditar">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Editar Morador</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <input type="hidden" id="editarId">
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label>Nome</label>
+            <input id="editarNome" class="form-control">
+          </div>
+
+          <div class="col-md-3">
+            <label>Bloco</label>
+            <input id="editarBloco" class="form-control">
+          </div>
+
+          <div class="col-md-3">
+            <label>Apartamento</label>
+            <input id="editarApartamento" class="form-control">
+          </div>
+
+          <div class="col-md-3">
+            <label>CPF</label>
+            <input id="editarCpf" class="form-control">
+          </div>
+
+          <div class="col-md-12">
+            <label>Telefone (WhatsApp)</label>
+            <input id="editarTelefone" class="form-control">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" onclick="salvarEdicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissoes.js"></script>
+
+<script>
+
+/* ===============================
+   LOGOUT
+================================ */
+async function logout() {
+  await supabaseClient.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+/* ===============================
+   ELEMENTOS
+================================ */
+const formMorador = document.getElementById('form-morador');
+const nome = document.getElementById('nome');
+const bloco = document.getElementById('bloco');
+const numeroApartamento = document.getElementById('numeroApartamento');
+const mensagem = document.getElementById('mensagem');
+const filtroBusca = document.getElementById('filtroBusca');
+const tabelaMoradores = document.getElementById('tabela-moradores');
+const modalExcluir = new bootstrap.Modal(document.getElementById('modalExcluir'));
+const modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+const cpf = document.getElementById('cpf');
+const telefoneNumero = document.getElementById('telefoneNumero');
+const editarCpf = document.getElementById('editarCpf');
+
+
+
+/* FORMATO CPF */
+function formatarCPF(cpf) {
+  if (!cpf) return '';
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+cpf.addEventListener('input', () => {
+  let v = cpf.value.replace(/\D/g, '').substring(0, 11);
+
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+
+  cpf.value = v;
+});
+
+editarCpf.addEventListener('input', () => {
+  let v = editarCpf.value.replace(/\D/g, '').substring(0, 11);
+
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+
+  editarCpf.value = v;
+});
+
+
+
+/* ===============================
+   Validação de CPF
+================================ */
+function validarCPF(cpf) {
+  cpf = cpf.replace(/\D/g, '');
+
+  if (cpf.length !== 11) return false;
+
+  // Elimina CPFs inválidos conhecidos
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  let soma = 0;
+  let resto;
+
+  // Primeiro dígito
+  for (let i = 1; i <= 9; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+  }
+
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(9, 10))) return false;
+
+  // Segundo dígito
+  soma = 0;
+  for (let i = 1; i <= 10; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+  }
+
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(10, 11))) return false;
+
+  return true;
+}
+
+
+/* ===============================
+   CADASTRAR MORADOR
+================================ */
+formMorador.onsubmit = async e => {
+  e.preventDefault();
+
+  mensagem.innerText = 'Processando...';
+  mensagem.className = '';
+
+  const ddi = document.getElementById('ddi').value;
+  const ddd = document.getElementById('ddd').value;
+  const numero = telefoneNumero.value.replace(/\D/g, '');
+ 
+  if (ddi === '55' && !validarCelularBR(numero)) {
+      mensagem.innerText = 'Informe um celular válido (9 dígitos iniciando com 9)';
+      mensagem.className = 'text-danger';
+    return;
+  }
+
+  const telefoneCompleto = `${ddi}${ddd}${numero}`;
+  const cpfLimpo = cpf.value.replace(/\D/g, '');
+
+if (!validarCPF(cpfLimpo)) {
+  mensagem.innerText = 'CPF inválido';
+  mensagem.className = 'text-danger';
+  return;
+}
+
+
+  const { error } = await supabaseClient
+  .from('moradores')
+  .insert({
+    nome: nome.value,
+    bloco: bloco.value,
+    numero_apartamento: numeroApartamento.value,
+    apartamento: numeroApartamento.value, // ✔ mantém compatibilidade
+    telefone_whatsapp: telefoneCompleto,
+    cpf: cpfLimpo,
+  });
+
+  if (error) {
+    console.error(error);
+    mensagem.innerText = 'Erro ao cadastrar morador';
+    mensagem.className = 'text-danger';
+    return;
+  }
+
+  mensagem.innerText = 'Morador cadastrado com sucesso';
+  mensagem.className = 'text-success';
+  formMorador.reset();
+  carregarMoradores();
+};
+
+/* VALIDAÇÃO DE NÚMERO */
+
+function validarCelularBR(numero) {
+  const celularBR = /^9\d{8}$/; // 9 + 8 dígitos
+  return celularBR.test(numero);
+}
+
+
+/* ===============================
+   LISTAR MORADORES
+================================ */
+async function carregarMoradores() {
+  const filtro = (filtroBusca.value || '').toLowerCase();
+
+  const { data, error } = await supabaseClient
+    .from('moradores')
+    .select('*')
+    .eq('ativo',true)
+    .order('bloco', { ascending: true })
+    .order('numero_apartamento', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao carregar moradores:', error);
+    return;
+  }
+
+  tabelaMoradores.innerHTML = '';
+
+  data
+    .filter(m =>
+      !filtro ||
+      m.nome.toLowerCase().includes(filtro) ||
+      m.bloco.toLowerCase().includes(filtro) ||
+      m.numero_apartamento.toString().includes(filtro)      
+    )
+
+    .forEach(m => {
+    tabelaMoradores.innerHTML += `
+      <tr>
+        <td>${m.nome}</td>
+        <td>${m.bloco}</td>
+        <td>${m.numero_apartamento}</td>
+        <td>${formatarTelefone(m.telefone_whatsapp)}</td>
+        <td>${formatarCPF(m.cpf)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary"
+            onclick="abrirEditar(${m.id})">
+            Editar
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger"
+            onclick="abrirExcluir(${m.id}, '${m.nome}', '${m.bloco}', '${m.numero_apartamento}')">
+            Excluir
+          </button>
+        </td>
+      </tr>`;
+    });
+}
+
+function formatarTelefone(t) {
+  if (!t) return '';
+  return `+${t.slice(0,2)} (${t.slice(2,4)}) ${t.slice(4,9)}-${t.slice(9)}`;
+}
+
+carregarMoradores();
+
+// ===== EXCLUIR =====
+
+function abrirExcluir(id, nome, bloco, apto) {
+  document.getElementById('excluirId').value = id;
+  document.getElementById('textoExcluir').innerText =
+    `Você deseja excluir o morador:
+     ${nome}, 
+     Bloco ${bloco}, 
+     Apto ${apto}?`;
+  modalExcluir.show();
+}
+
+async function confirmarExcluir() {
+  const id = document.getElementById('excluirId').value;
+
+  const { error } = await supabaseClient
+    .from('moradores')
+    .update({ ativo: false })
+    .eq('id', id);
+
+    if (error) {
+    console.error('Erro ao desativar morador:', error);
+    alert('Erro ao excluir morador');
+    return;
+  }
+
+  modalExcluir.hide();
+  carregarMoradores();
+}
+
+// ===== EDITAR =====
+async function abrirEditar(id) {
+  const { data } = await supabaseClient
+    .from('moradores')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  document.getElementById('editarId').value = data.id;
+  document.getElementById('editarNome').value = data.nome;
+  document.getElementById('editarBloco').value = data.bloco;
+  document.getElementById('editarApartamento').value = data.numero_apartamento;
+  document.getElementById('editarCpf').value = data.cpf;
+  document.getElementById('editarTelefone').value = formatarTelefone(data.telefone_whatsapp);
+
+  modalEditar.show();
+}
+
+
+async function salvarEdicao() {
+  const id = document.getElementById('editarId').value;
+  const telefoneLimpo = document
+    .getElementById('editarTelefone')
+    .value.replace(/\D/g, '');
+
+    const cpfEditado = editarCpf.value.replace(/\D/g, '');
+
+if (!validarCPF(cpfEditado)) {
+  alert('CPF inválido');
+  return;
+}
+
+  await supabaseClient
+    .from('moradores')
+    .update({
+      nome: editarNome.value,
+      bloco: editarBloco.value,
+      numero_apartamento: editarApartamento.value,
+      cpf: cpfEditado,
+      telefone_whatsapp: telefoneLimpo
+    })
+    .eq('id', id);
+
+  modalEditar.hide();
+  carregarMoradores();
+}
+
+</script>
+
+<script>
+
+
+telefoneNumero.addEventListener('input', () => {
+  let v = telefoneNumero.value.replace(/\D/g, '');
+
+  // limita a 9 dígitos
+  v = v.substring(0, 9);
+
+  // aplica máscara 9XXXX-XXXX
+  if (v.length > 5) {
+    v = v.replace(/^(\d{5})(\d{0,4})/, '$1-$2');
+  }
+
+  telefoneNumero.value = v;
+});
+</script>
+</body>
+</html>

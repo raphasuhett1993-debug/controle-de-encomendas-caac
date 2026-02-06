@@ -1,0 +1,5 @@
+// supabase.js
+const supabaseClient = supabase.createClient(
+  'https://evuannfoutiphieqgvii.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2dWFubmZvdXRpcGhpZXFndmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTg2MTgsImV4cCI6MjA4MTg5NDYxOH0.BYDD8vVAoKtzxZfzsn_c1OdgmqsrrPGk9g4yK0QzimE'
+);
